@@ -1,0 +1,22 @@
+# Libraries for data manipulation and analysis
+pandas
+numpy
+missingno
+seaborn
+matplotlib
+
+# Library to import the dataset
+sklearn
+
+# Libraries for machine learning and model evaluation
+scikit-learn
+lightgbm
+
+# Tuning and optimization libraries
+optuna
+shap
+mlflow
+fairlearn
+
+# Library for saving and loading models
+joblib

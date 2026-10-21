@@ -1,0 +1,108 @@
+{
+  "created_at_utc": "2026-10-21T16:04:55.812705+00:00",
+  "source": "Fresh reproduction of supplied diabetes.ipynb; original protocol retained",
+  "target": {
+    "NO": 0,
+    "<30": 1,
+    ">30": 1
+  },
+  "prediction_time": "At discharge",
+  "split_counts": {
+    "development": 81613,
+    "fit": 65146,
+    "valid": 16467,
+    "test": 20153
+  },
+  "split_patients": {
+    "development": 57214,
+    "fit": 45771,
+    "valid": 11443,
+    "test": 14304
+  },
+  "selected_study": {
+    "study": "lightgbm_tuning",
+    "number": 32,
+    "value": 0.7053308958423451,
+    "params": {
+      "class_weight": null,
+      "learning_rate": 0.020617118634099374,
+      "min_child_samples": 100,
+      "n_estimators": 400,
+      "num_leaves": 71
+    },
+    "user_attrs": {
+      "fit_time": [
+        4.572423934936523,
+        4.480405330657959,
+        4.904225826263428,
+        4.783447027206421,
+        4.571123838424683
+      ],
+      "score_time": [
+        0.5485539436340332,
+        0.7424368858337402,
+        0.5642502307891846,
+        0.575268030166626,
+        0.5677440166473389
+      ],
+      "test_accuracy": [
+        0.6480233193660048,
+        0.6469938650306748,
+        0.6500462820117248,
+        0.642029074403484,
+        0.6562002693108091
+      ],
+      "test_f1": [
+        0.6024691358024692,
+        0.5971152499649909,
+        0.6012796175209169,
+        0.5893033075299086,
+        0.6109841401759124
+      ],
+      "test_precision": [
+        0.6344986997977463,
+        0.6367030013438854,
+        0.6334814814814815,
+        0.6266087997605507,
+        0.6374277456647399
+      ],
+      "test_recall": [
+        0.5735178897884565,
+        0.5621621621621622,
+        0.5721932289575806,
+        0.5561902231668437,
+        0.5866471605266658
+      ],
+      "test_roc_auc": [
+        0.7085280370887806,
+        0.7007855359662589,
+        0.7074364950039412,
+        0.698291945587376,
+        0.7116124655653687
+      ]
+    }
+  },
+  "versions": {
+    "numpy": "2.1.3",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.6.1",
+    "lightgbm": "4.7.0",
+    "catboost": "1.2.10",
+    "fairlearn": "0.15.0",
+    "optuna": "5.0.0",
+    "joblib": "1.4.2",
+    "shap": "0.54.1"
+  },
+  "source_hashes": {
+    "data/diabetes130us.csv.gz": "d6a22f4cd3e2e3f7df7a8e705ac489874452e40060c78c9888d9b377236e8068",
+    "optuna_results.db": "c2e8b18c5973dffeba8add1ab74107a4f28c2f29ba500bca5b51bd9687d9e4a7",
+    "diabetes.ipynb": "a0b562f79878cbfbbc0056e4eee6e6ac0a98602b9f0891fa8d4424e0cde0977f"
+  },
+  "protocol_limitations": [
+    "Validation belongs to development previously used by Optuna; it is not independent of hyperparameter selection.",
+    "Test was already examined in the source notebook; no new choices are made using its scores.",
+    "Cohort and binary target include all stays and readmissions regardless of delay, including deceased patients.",
+    "Fairness mitigation requires race at prediction time and changes decisions, not baseline probabilities."
+  ],
+  "fit_elapsed_seconds": 5.64911304198904
+}

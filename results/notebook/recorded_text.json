@@ -1,0 +1,38 @@
+{
+  "96": {
+    "execution_count": 48,
+    "text": "Best ROC-AUC: 0.7053308958423451\nBest parameters: {'n_estimators': 400, 'learning_rate': 0.020617118634099374, 'num_leaves': 71, 'min_child_samples': 100, 'class_weight': None}\n"
+  },
+  "100": {
+    "execution_count": 51,
+    "text": "Best ROC-AUC: 0.7087070879753355\nBest parameters: {'iterations': 500, 'learning_rate': 0.052303490974577496, 'depth': 8, 'auto_class_weights': 'Balanced'}\n"
+  },
+  "114": {
+    "execution_count": 103,
+    "text": "Readmission probabilities: [0.49307197 0.26971267 0.49043302]\nSame predictions: True\n\n/var/folders/6z/9jpq2f2d3hz2c3bgp4wmwwjr0000gn/T/ipykernel_89859/3304586762.py:6: FutureWarning: The behavior of Series.replace (and DataFrame.replace) with CategoricalDtype is deprecated. In a future version, replace will only be used for cases that preserve the categories. To change the categories, use ser.cat.rename_categories instead.\n  data = data.replace(\"?\", np.nan)\n/var/folders/6z/9jpq2f2d3hz2c3bgp4wmwwjr0000gn/T/ipykernel_89859/3304586762.py:7: FutureWarning: The behavior of Series.replace (and DataFrame.replace) with CategoricalDtype is deprecated. In a future version, replace will only be used for cases that preserve the categories. To change the categories, use ser.cat.rename_categories instead.\n  data = data.replace(\"None\", np.nan)\n/var/folders/6z/9jpq2f2d3hz2c3bgp4wmwwjr0000gn/T/ipykernel_89859/3304586762.py:8: FutureWarning: The behavior of Series.replace (and DataFrame.replace) with CategoricalDtype is deprecated. In a future version, replace will only be used for cases that preserve the categories. To change the categories, use ser.cat.rename_categories instead.\n  data = data.replace(\"Unknown/Invalid\", np.nan)\n"
+  },
+  "121": {
+    "execution_count": 85,
+    "text": "Stay: 39397\nPredicted readmission probability: 0.6057499973536408\n\n                                Feature     Value      SHAP  Absolute SHAP\n6             numeric__number_inpatient -0.503312 -0.213234       0.213234\n397             categorical__diag_1_491  1.000000  0.176112       0.176112\n69   categorical__admission_source_id_7  1.000000  0.161564       0.161564\n8              numeric__previous_visits -0.089435  0.122065       0.122065\n3              numeric__num_medications  0.119619  0.076222       0.076222\nSHAP additivity check: True\nStay: 66309\nPredicted readmission probability: 0.23157992925718873\n\n                               Feature     Value      SHAP  Absolute SHAP\n8             numeric__previous_visits -0.523137 -0.300814       0.300814\n6            numeric__number_inpatient -0.503312 -0.160896       0.160896\n0            numeric__time_in_hospital -1.136935 -0.094118       0.094118\n69  categorical__admission_source_id_7  1.000000  0.088594       0.088594\n2              numeric__num_procedures  0.389052 -0.084272       0.084272\nSHAP additivity check: True\nStay: 42168\nPredicted readmission probability: 0.531330127341237\n\n                          Feature     Value      SHAP  Absolute SHAP\n8        numeric__previous_visits -0.523137 -0.224324       0.224324\n1005      categorical__diag_2_428  1.000000  0.186930       0.186930\n6       numeric__number_inpatient -0.503312 -0.103045       0.103045\n7       numeric__number_diagnoses  0.816531  0.102447       0.102447\n2252  categorical__diabetesMed_No  0.000000  0.079945       0.079945\nSHAP additivity check: True\n"
+  },
+  "122": {
+    "execution_count": 86,
+    "text": "numeric__previous_visits                    73760.727955\nnumeric__number_inpatient                   34915.453754\ncategorical__discharge_disposition_id_11    34889.524458\nnumeric__num_lab_procedures                 17668.919553\nnumeric__number_diagnoses                   17250.658038\nnumeric__num_medications                    15096.604290\nnumeric__lab_procedures_per_day             13848.581371\nnumeric__time_in_hospital                    6084.288099\ncategorical__discharge_disposition_id_14     5223.743895\nnumeric__num_procedures                      5187.702741\ndtype: float64"
+  },
+  "126": {
+    "execution_count": 91,
+    "text": "<Figure size 640x480 with 1 Axes>\nBrier score: 0.21552468552847948\n"
+  },
+  "127": {
+    "execution_count": 92,
+    "text": "ECE: 0.010763150222173357\n"
+  },
+  "137": {
+    "execution_count": 96,
+    "text": "TPR    0.418712\nFPR    0.216584\ndtype: float64\nEqualized odds gap: 0.4187124931805783\n"
+  },
+  "144": {
+    "execution_count": 100,
+    "text": "        Accuracy  Precision  Recall     F1\nBefore     0.648      0.623   0.569  0.595\nAfter      0.642      0.607   0.599  0.603\nTest ROC-AUC: 0.7069148710313543\n"
+  }
+}

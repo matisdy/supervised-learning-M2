@@ -1,11 +1,17 @@
 {
-  "rows": 101766,
-  "predictors": 49,
-  "unique_patients": 71518,
-  "repeated_patients": 16773,
-  "stays_of_repeated_patients": 47021,
-  "duplicated_predictor_rows": 0,
-  "positive_rate": 0.4608808442898414,
-  "expired_stays": 1652,
-  "positive_expired_stays": 0
+  "source": "Fresh local snapshot summaries; same full cohort as notebook",
+  "stays": 101766,
+  "raw_predictors": 49,
+  "patients": 71518,
+  "patients_with_multiple_stays": 16773,
+  "stays_from_repeated_patients": 47021,
+  "duplicate_rows": 0,
+  "positive_fraction": 0.4608808442898414,
+  "target": "Any recorded readmission (<30 or >30), versus NO; predictions at discharge",
+  "split_counts": {
+    "development": 81613,
+    "fit": 65146,
+    "valid": 16467,
+    "test": 20153
+  }
 }

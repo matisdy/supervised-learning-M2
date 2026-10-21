@@ -1,0 +1,60 @@
+{
+  "evidence_type": "historical_sqlite_trials",
+  "source": "optuna_results.db",
+  "sha256": "c2e8b18c5973dffeba8add1ab74107a4f28c2f29ba500bca5b51bd9687d9e4a7",
+  "timestamp_note": "Raw database timestamps, timezone unspecified. No conversion applied.",
+  "studies": [
+    {
+      "study_name": "lightgbm_tuning",
+      "trial_count": 50,
+      "state_counts": {
+        "COMPLETE": 50
+      },
+      "fold_rows": 250,
+      "best_trial": 32,
+      "best_roc_auc": 0.7053308958423451,
+      "best_params": {
+        "class_weight": null,
+        "learning_rate": 0.020617118634099374,
+        "min_child_samples": 100,
+        "n_estimators": 400,
+        "num_leaves": 71
+      }
+    },
+    {
+      "study_name": "catboost_tuning",
+      "trial_count": 50,
+      "state_counts": {
+        "COMPLETE": 50
+      },
+      "fold_rows": 250,
+      "best_trial": 27,
+      "best_roc_auc": 0.7087070879753355,
+      "best_params": {
+        "auto_class_weights": "Balanced",
+        "depth": 8,
+        "iterations": 500,
+        "learning_rate": 0.052303490974577496
+      }
+    }
+  ],
+  "source_unchanged_after_export": true,
+  "files": [
+    {
+      "file": "catboost_tuning_folds.csv",
+      "sha256": "b801ba5ccf96f8286695292016e625b537d684215a08fbef55472f78842cb9cd"
+    },
+    {
+      "file": "catboost_tuning_trials.csv",
+      "sha256": "78d2b47f613637656e8674ecc11ac0453d3b6f284e1c8d5af5ae30ce8c97f105"
+    },
+    {
+      "file": "lightgbm_tuning_folds.csv",
+      "sha256": "d3fe53cd6388e72472d0c4b57ac6087fe57da737a8ce4d254465209287a4636d"
+    },
+    {
+      "file": "lightgbm_tuning_trials.csv",
+      "sha256": "9a332be4ce0e9b4362480e89682b3bfb78dff5a38817a2cfa630929472fadf98"
+    }
+  ]
+}

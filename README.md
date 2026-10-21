@@ -1,86 +1,91 @@
-# Recorded hospital readmission
+# Diabetes readmission prediction
 
-Supervised Learning & Model Engineering, Albert School.  
-**Authors:** Matis Douay, Driss Haddadi and Rayan Faher Bonne.  
-**Dataset:** Diabetes 130-US Hospitals, OpenML 4541.  
-**Submission repository:** https://github.com/matisdy/diabetes-submission
+Dataset: **Diabetes 130-US Hospitals, OpenML 4541** (101,766 stays). The positive class combines recorded readmissions `<30` and `>30`; `NO` is negative. Predictions use encounter/discharge information.
 
-The target is a recorded readmission at either delay (`<30` or `>30` = 1; `NO` = 0). `NO` does not establish that no readmission occurred elsewhere. This is a coursework proof of concept, not a clinically validated service.
+## Files
+
+- `src/`: main Python implementation, including the prediction endpoint.
+- `data/`: local raw dataset, original schema and provenance.
+- `artifacts/model.joblib`: fitted complete Pipeline and fairness postprocessor.
+- `results/notebook/`: saved notebook results, including the explicitly labelled restored Random Forest comparison.
+- `results/optuna/`: parameters, metrics and fold records from the two historical studies.
+- `results/reproduced/`: results reproduced by the scripts, including comparison artifacts.
+- `examples/request.json`: raw-input example without the target.
+- `diabetes.ipynb`: supplementary demonstrations and saved results, with restored comparison provenance.
+- `optuna_results.db`: original studies, read-only in default commands.
 
 ## Installation
 
-Run all commands from the repository root. Use Python 3.13; the pinned dependencies match the original Python 3.13.7 environment. LightGBM requires a compatible native OpenMP runtime.
+Validated locally with Python 3.13.7 and the versions in `requirements.txt`. These are observed working versions; a clean installation on another machine has not been tested.
 
-```bash
+```sh
 python3.13 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m pip check
 ```
 
-## Reproduce the results
+Run commands from this folder. The scripts use the supplied dataset without downloading it. For the optional notebook, a Jupyter frontend and `ipykernel==6.29.5` are separate from the script runtime.
 
-```bash
+## Reproduction
+
+```sh
+# Export historical notebook results and existing Optuna traces.
+python -m src.export_results
+
+# Reproduce data exploration.
 python -m src.eda
-python -m src.train
-```
 
-The training command loads the bundled dataset offline, recreates patient-grouped partitions, reads the retained Optuna studies, fits the selected LightGBM and fairness post-processor, and exports calibration, SHAP and fairness results under `results/reproduced/`. It saves `artifacts/model.joblib` and checks key metrics against the frozen notebook results. Generated outputs are overwritten.
-
-The fitting/validation/test sets contain 65,146 / 16,467 / 20,153 stays. No patient crosses either split boundary. The single estimator Pipeline accepts 49 raw predictors: its first `PrepareEncounters` step performs fixed cleaning and feature calculations, followed by learned preprocessing and the classifier. Four model families were compared; the two strongest boosting candidates were tuned.
-
-Default training does not repeat the four baseline CVs or run new Optuna trials. To repeat the baseline comparison or omit SHAP:
-
-```bash
-python -m src.train --baselines
-python -m src.train --skip-shap
-```
-
-To export/resume the retained tuning studies:
-
-```bash
+# Inspect persisted best trials; no new tuning.
 python -m src.tune
+
+# Reconstruct the final Pipeline from the selected persisted parameters.
+python -m src.train
+
+# Evaluate the saved model and reproduce explanations.
+python -m src.evaluate
+python -m src.explain
+
+# Reproduce the four-model comparison with patient-grouped five-fold CV.
+python -m src.tune --compare
 ```
 
-The supplied database contains 50 completed trials per candidate. The default total budget is 50, so this starts no new trials. A separate `artifacts/tuning_work.db` is used; the original `optuna_results.db` is preserved. Increasing `--budget` intentionally runs further trials. Never mix changed data, targets or folds into the retained studies. See `python -m src.train --help` and `python -m src.tune --help` for options.
+The comparison uses Logistic Regression, Random Forest (100 trees, random_state=42), LightGBM and CatBoost. Random Forest has been restored to the supplementary notebook and comparison. The historical database contains 50 completed LightGBM trials and 50 completed CatBoost trials. Default commands never launch new trials or modify that database.
+
+Fresh comparison results include fold metrics, parameters and 20 fitted fold Pipelines. Historical notebook outputs and historical tuning traces are kept separate from newly reproduced results. Times depend on the execution environment; displayed historical tables may be rounded.
 
 ## Local prediction endpoint
 
-Use the supplied model bundle, or rebuild it with `python -m src.train`:
+The fitted artifact is supplied. To start the service:
 
-```bash
-python -m src.serve --host 127.0.0.1 --port 8000 --model artifacts/model.joblib
+```sh
+python -m src.serve --host 127.0.0.1 --port 8000
 ```
 
-In a second terminal, call the endpoint with the supplied raw-encounter example:
+In another terminal, from this folder:
 
-```bash
-curl --fail http://127.0.0.1:8000/health
-curl --fail http://127.0.0.1:8000/predict -H 'Content-Type: application/json' --data-binary @examples/request.json
+```sh
+curl http://127.0.0.1:8000/health
+curl -X POST http://127.0.0.1:8000/predict \
+  -H 'Content-Type: application/json' \
+  --data-binary @examples/request.json
 ```
 
-`POST /predict` accepts `{"records": [raw_encounter, ...], "mitigation": false}`. Each record must contain all 49 raw predictors listed in `data/diabetes130us.json`, excluding `readmitted`. Numerical values must be finite integers; stay duration must be positive. Categorical values are strings or null. Unknown categories are supported by the base encoder. Input validation checks schema, not clinical plausibility.
+The JSON body is `{"records": [{...}], "mitigated": false}`. Use the original feature names and raw values shown in the example. Do not include `readmitted` or create engineered features. The seven columns discarded by preparation are optional; other raw predictor columns are required. Numeric values must be JSON numbers; missing values can be null, except `time_in_hospital`, which must be positive.
 
-The response contains the base probability and a threshold-0.5 decision. Setting `"mitigation": true` adds a race-dependent equalized-odds decision without changing the probability; the race group must have been seen during fitting. Optional `"random_seed": 42` reproduces the same whole-batch randomized output. Seeded single requests need not equal a seeded batch. The standard-library HTTP server is intended for a local demonstration.
+The response contains `probabilities`, binary `predictions` and `mitigated`. The default decision threshold is 0.5. Set `mitigated` to `true` to use the saved equalized-odds postprocessor: it needs race information and changes binary decisions, not LightGBM probabilities. Its fixed random state makes the same ordered batch reproducible; randomized decisions may vary with batch composition.
 
-## Files and report
+The service binds to localhost. Invalid inputs return JSON errors; startup never trains or downloads a model.
 
-- `src/`: loading, Pipeline construction, EDA, training, tuning, evaluation, SHAP and serving.
-- `data/`: offline snapshot and schema/provenance metadata; see `data/README.md`.
-- `optuna_results.db`: original LightGBM and CatBoost studies.
-- `artifacts/model.joblib`: fitted Pipeline, fairness rules and metadata.
-- `examples/request.json`: complete raw-encounter request for the endpoint.
-- `results/reproduced/`: selected metrics, figures, comparisons and tuning histories.
-- `reports/diabetes_report.pdf`: ten main pages and a contribution/AI-use appendix.
-- `reports/latex/main.tex`, `reports/latex/images/`: editable report source.
-- `presentation/deck.pptx`, `presentation/deck.pdf`: editable defense deck and PDF.
+## Methods and limitations
 
-Compile the report with a standard LaTeX installation:
+The Pipeline includes deterministic cleaning and feature creation through `FunctionTransformer`, followed by fitted imputation, encoding, scaling where applicable and the estimator. The preparation function is importable from `src.data`, so inference does not depend on notebook state.
 
-```bash
-cd reports/latex
-pdflatex -interaction=nonstopmode -halt-on-error main.tex
-pdflatex -interaction=nonstopmode -halt-on-error main.tex
-```
+Patients remain separate between fitting, validation and test; CV also groups by patient. Historical tuning used the complete development set before its later fitting/validation split. Validation is therefore **not independent of hyperparameter selection**. The test had already been evaluated in the source notebook; reproduction retains existing choices without selecting from its scores.
 
-The retained cohort includes deaths; the validation subset participated in hyperparameter selection, and SHAP uses a mixed development sample. The report explains these limits and the accuracy/fairness trade-off. The three authors must confirm their actual contribution and full AI-use declarations, rehearse the seven-minute presentation and three-minute Q&A, and verify professor access before submitting the report PDF.
+The complete cohort, including deceased patients, and the target covering readmission at either delay are retained. SHAP explanations are not causal. Fairness mitigation trades predictive performance against group disparities and does not prove universal fairness.
+
+Course references (physical PDF pages): `Final Project Instruction.pdf`, pp. 1–3; `S5-full.pdf`, pp. 10–12, 32–39 and 48–55; `Session 7.pdf`, pp. 8–17; `Session 8.pdf`, pp. 18–22; `Session 9.pdf`, pp. 18–22. FunctionTransformer, portable serialization, file exports and the standard-library HTTP service are explicit implementation adaptations rather than APIs claimed to have been taught.
+
+The final model reproduces recorded validation Brier/ECE and test ROC-AUC exactly. The four fresh baseline comparisons agree with the original report at its displayed metric precision, and raw-input and HTTP prediction parity were checked before packaging.
+
+The report PDF, oral presentation and genuine Git history remain separate academic submission requirements. The report must disclose actual AI use and human contributions.

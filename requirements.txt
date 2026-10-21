@@ -1,23 +1,19 @@
-# Libraries for data manipulation and analysis
-pandas
-numpy
-missingno
-seaborn
-matplotlib
+# Runtime used for delivery validation: Python 3.13.7.
+# Pinned to versions observed in the source project's local environment.
+# Fresh-environment installation is separate from those local observations.
+numpy==2.1.3
+pandas==2.2.3
+scipy==1.15.3
+scikit-learn==1.6.1
+matplotlib==3.10.9
+seaborn==0.13.2
+missingno==0.5.2
+lightgbm==4.7.0
+catboost==1.2.10
+optuna==5.0.0
+shap==0.54.1
+fairlearn==0.15.0
+joblib==1.4.2
 
-# Library to import the dataset
-sklearn
-
-# Libraries for machine learning and model evaluation
-scikit-learn
-lightgbm
-catboost
-
-# Tuning and optimization libraries
-optuna
-shap
-mlflow
-fairlearn
-
-# Library for saving and loading models
-joblib
+# Optional notebook kernel (not needed for the .py commands):
+# ipykernel==6.29.5

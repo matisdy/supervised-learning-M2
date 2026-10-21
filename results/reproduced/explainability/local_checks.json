@@ -1,0 +1,26 @@
+[
+  {
+    "row_index": 39397,
+    "probability": 0.6057499973536408,
+    "baseline_raw_score": -0.19496801510913936,
+    "reconstructed_raw_score": 0.42948212303685823,
+    "model_raw_score": 0.42948212277236686,
+    "additivity_check": true
+  },
+  {
+    "row_index": 66309,
+    "probability": 0.23157992925718873,
+    "baseline_raw_score": -0.19496801510913936,
+    "reconstructed_raw_score": -1.199411473725667,
+    "model_raw_score": -1.1994114700235725,
+    "additivity_check": true
+  },
+  {
+    "row_index": 42168,
+    "probability": 0.531330127341237,
+    "baseline_raw_score": -0.19496801510913936,
+    "reconstructed_raw_score": 0.12548491210705337,
+    "model_raw_score": 0.12548491245665588,
+    "additivity_check": true
+  }
+]

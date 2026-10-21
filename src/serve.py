@@ -1,159 +1,200 @@
-"""Local proof-of-concept HTTP transport for the frozen notebook model.
+"""Serve the frozen notebook pipeline locally with Python's HTTP server."""
 
-Run from the project root: python -m src.serve --model artifacts/model.joblib
-Only trusted, locally generated joblib bundles should be loaded.
-"""
 import argparse
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import math
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import joblib
 import numpy as np
 import pandas as pd
 
-from .data import sensitive_groups
+
+DROPPED_COLUMNS = {
+    "weight", "max_glu_serum", "A1Cresult", "medical_specialty",
+    "payer_code", "encounter_id", "patient_nbr",
+}
 
 
-def validate_request(payload, metadata):
-    """Validate JSON against the frozen raw schema without inventing categories."""
-    if not isinstance(payload, dict):
-        raise ValueError("Request must be a JSON object.")
-    extra = set(payload) - {"records", "mitigation", "random_seed"}
-    if extra:
-        raise ValueError("Unknown request fields: " + ", ".join(sorted(extra)))
-    records = payload.get("records")
+class InputError(ValueError):
+    """A request cannot be used by the frozen model."""
+
+
+def load_bundle(path):
+    """Load a locally generated artifact, without training or downloading."""
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Model artifact not found: {path}. Run python -m src.train first."
+        )
+    bundle = joblib.load(path)
+    for key in ["pipeline", "input_columns", "schema", "metadata"]:
+        if key not in bundle:
+            raise ValueError(f"Model artifact is missing {key!r}; recreate it with src.train.")
+    return bundle
+
+
+def request_frame(records, bundle):
+    """Validate JSON types and preserve OpenML numeric/category conventions."""
     if not isinstance(records, list) or not records:
-        raise ValueError("records must be a non-empty array of encounter objects.")
-    mitigation = payload.get("mitigation", False)
-    if not isinstance(mitigation, bool):
-        raise ValueError("mitigation must be a boolean.")
-    seed = payload.get("random_seed")
-    if seed is not None and (type(seed) is not int or not 0 <= seed <= 2**32 - 1):
-        raise ValueError("random_seed must be null or an integer between 0 and 4294967295.")
-    columns = metadata["raw_columns"]
+        raise InputError("records must be a non-empty list of objects.")
+    if len(records) > 1000:
+        raise InputError("At most 1000 records are accepted per request.")
+    columns = bundle["input_columns"]
+    required = set(columns) - DROPPED_COLUMNS
+    allowed = set(columns)
+    schema = bundle["schema"]
+    normalized = []
     for index, record in enumerate(records):
         if not isinstance(record, dict):
-            raise ValueError(f"records[{index}] must be an object.")
-        missing, unexpected = set(columns) - set(record), set(record) - set(columns)
+            raise InputError(f"Record {index} must be an object.")
+        missing = required - set(record)
         if missing:
-            raise ValueError(f"records[{index}] missing columns: " + ", ".join(sorted(missing)))
-        if unexpected:
-            raise ValueError(f"records[{index}] unexpected columns: " + ", ".join(sorted(unexpected)))
-        for column in columns:
-            value = record[column]
-            dtype = metadata["raw_schema"][column]["dtype"]
-            if dtype == "category":
-                if value is not None and not isinstance(value, str):
-                    raise ValueError(f"records[{index}].{column} must be a string or null.")
+            raise InputError(f"Record {index} is missing columns: {', '.join(sorted(missing))}.")
+        extra = set(record) - allowed
+        if extra:
+            raise InputError(
+                f"Record {index} has unexpected columns: {', '.join(sorted(extra))}. "
+                "Do not include readmitted or engineered features."
+            )
+        row = {}
+        for name in columns:
+            value = record.get(name)
+            if name in DROPPED_COLUMNS:
+                # These columns are discarded by the pipeline and may be omitted.
+                row[name] = value
+                continue
+            dtype = schema[name]["dtype"]
+            if dtype.startswith(("int", "float")):
+                if value is not None and (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                ):
+                    raise InputError(f"Record {index}: {name} must be a finite number or null.")
+                if value is not None and dtype.startswith("int") and value != int(value):
+                    raise InputError(f"Record {index}: {name} must be an integer or null.")
+                row[name] = np.nan if value is None else value
             else:
-                if isinstance(value, bool) or not isinstance(value, (int, float)):
-                    raise ValueError(f"records[{index}].{column} must be a finite number.")
-                try:
-                    finite = math.isfinite(value)
-                except OverflowError:
-                    finite = False
-                if not finite:
-                    raise ValueError(f"records[{index}].{column} must be a finite number.")
-                if dtype.startswith("int") and (int(value) != value or not -(2**63) <= value < 2**63):
-                    raise ValueError(f"records[{index}].{column} must be a signed 64-bit integer value.")
-        if record["time_in_hospital"] <= 0:
-            raise ValueError(f"records[{index}].time_in_hospital must be greater than zero.")
-    raw = pd.DataFrame(records, columns=columns).replace({None: np.nan})
-    for column in columns:
-        dtype = metadata["raw_schema"][column]["dtype"]
-        if dtype != "category":
-            raw[column] = raw[column].astype(dtype)
-    if mitigation:
-        groups = sensitive_groups(raw)
-        unknown = set(groups) - set(metadata["sensitive_groups"])
-        if unknown:
-            raise ValueError("Mitigation requires a race group seen during fitting; unknown groups: "
-                             + ", ".join(sorted(unknown)))
-    return raw, mitigation, seed
+                if value is not None and not isinstance(value, str):
+                    raise InputError(f"Record {index}: {name} must be a string or null.")
+                # Object dtype preserves unseen string categories for handle_unknown.
+                row[name] = np.nan if value is None else value
+        duration = row["time_in_hospital"]
+        if pd.isna(duration) or duration <= 0:
+            raise InputError(f"Record {index}: time_in_hospital must be greater than zero.")
+        normalized.append(row)
+    frame = pd.DataFrame(normalized, columns=columns)
+    for name in columns:
+        dtype = schema[name]["dtype"]
+        if name in DROPPED_COLUMNS or not dtype.startswith(("int", "float")):
+            frame[name] = frame[name].astype(object)
+        elif frame[name].notna().all():
+            frame[name] = frame[name].astype(dtype)
+    return frame
 
 
 def predict(payload, bundle):
-    raw, mitigation, seed = validate_request(payload, bundle["metadata"])
-    probabilities = bundle["pipeline"].predict_proba(raw)[:, 1]
-    labels = (probabilities >= 0.5).astype(int)
-    predictions = [{"probability": float(p), "prediction": int(label)}
-                   for p, label in zip(probabilities, labels)]
-    if mitigation:
-        groups = sensitive_groups(raw)
-        decisions = bundle["fair_model"].predict(
-            raw, sensitive_features=groups, random_state=seed
+    if not isinstance(payload, dict) or set(payload) - {"records", "mitigated"}:
+        raise InputError("Body must be an object containing records and optional mitigated.")
+    mitigated = payload.get("mitigated", False)
+    if not isinstance(mitigated, bool):
+        raise InputError("mitigated must be true or false.")
+    frame = request_frame(payload.get("records"), bundle)
+    probabilities = np.asarray(bundle["pipeline"].predict_proba(frame))[:, 1]
+    if mitigated:
+        if bundle.get("mitigator") is None:
+            raise InputError("This artifact does not contain a fitted mitigation model.")
+        sensitive = (
+            frame["race"].astype("string")
+            .replace(["?", "None", "Unknown/Invalid"], pd.NA)
+            .fillna("Unknown")
         )
-        for result, decision in zip(predictions, decisions):
-            result["mitigated_prediction"] = int(decision)
-    return {"predictions": predictions, "threshold": 0.5,
-            "mitigation": mitigation,
-            "target": bundle["metadata"]["target"]}
+        known = set(bundle["mitigator"].interpolated_thresholder_.interpolation_dict)
+        unknown = set(sensitive) - known
+        if unknown:
+            raise InputError("Mitigation has no fitted rule for race: " + ", ".join(sorted(unknown)))
+        predictions = bundle["mitigator"].predict(
+            frame, sensitive_features=sensitive, random_state=42
+        )
+    else:
+        predictions = (probabilities >= 0.5).astype(int)
+    if not np.isfinite(probabilities).all():
+        raise ValueError("Model produced a non-finite probability.")
+    return {
+        "probabilities": probabilities.tolist(),
+        "predictions": np.asarray(predictions, dtype=int).tolist(),
+        "mitigated": mitigated,
+    }
 
 
-def make_handler(bundle):
+def make_server(bundle, host="127.0.0.1", port=8000):
+    """Construct the local server; used by the CLI and the HTTP integration check."""
     class Handler(BaseHTTPRequestHandler):
-        def send_json(self, status, payload):
-            content = json.dumps(payload, allow_nan=False).encode("utf-8")
+        def respond(self, status, payload):
+            body = json.dumps(payload, allow_nan=False).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(content)))
+            self.send_header("Content-Length", str(len(body)))
             self.end_headers()
-            self.wfile.write(content)
+            self.wfile.write(body)
 
         def do_GET(self):
-            if self.path != "/health":
-                return self.send_json(404, {"error": "Unknown route."})
-            status = 200 if bundle is not None else 503
-            self.send_json(status, {"status": "ready" if bundle is not None else "unavailable",
-                                    "model_loaded": bundle is not None})
+            if urlsplit(self.path).path != "/health":
+                self.respond(404, {"error": "Unknown route. Use GET /health or POST /predict."})
+                return
+            self.respond(200, {"status": "ok", "model_loaded": True})
 
         def do_POST(self):
-            if self.path != "/predict":
-                return self.send_json(404, {"error": "Unknown route."})
-            if bundle is None:
-                return self.send_json(503, {"error": "Model unavailable. Rebuild artifacts/model.joblib."})
+            if urlsplit(self.path).path != "/predict":
+                self.respond(404, {"error": "Unknown route. Use GET /health or POST /predict."})
+                return
+            if self.headers.get_content_type() != "application/json":
+                self.respond(415, {"error": "Content-Type must be application/json."})
+                return
             try:
-                length = int(self.headers.get("Content-Length", "0"))
-                if length <= 0:
-                    raise ValueError("A non-empty JSON body with Content-Length is required.")
-                body = self.rfile.read(length).decode("utf-8")
-                def reject_constant(value):
-                    raise ValueError("NaN and Infinity are not valid JSON numbers.")
-                payload = json.loads(body, parse_constant=reject_constant)
+                size = int(self.headers.get("Content-Length", "0"))
+                if size <= 0 or size > 2_000_000:
+                    raise InputError("JSON body must contain 1 to 2000000 bytes.")
+                payload = json.loads(
+                    self.rfile.read(size),
+                    parse_constant=lambda value: (_ for _ in ()).throw(
+                        InputError(f"Invalid JSON numeric constant: {value}.")
+                    ),
+                )
                 result = predict(payload, bundle)
-            except (ValueError, TypeError, UnicodeDecodeError) as error:
-                return self.send_json(400, {"error": str(error)})
+            except (InputError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+                self.respond(400, {"error": str(exc)})
+                return
+            except (ValueError, TypeError, KeyError, OverflowError) as exc:
+                self.respond(400, {"error": f"Input cannot be processed: {exc}"})
+                return
             except Exception:
-                return self.send_json(503, {"error": "Prediction unavailable; inspect the model and environment locally."})
-            self.send_json(200, result)
+                self.respond(500, {"error": "Prediction failed; inspect the local server log."})
+                raise
+            self.respond(200, result)
 
-    return Handler
+    return ThreadingHTTPServer((host, port), Handler)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", default=8000, type=int)
-    parser.add_argument("--model", default="artifacts/model.joblib", type=Path)
+    parser.add_argument("--model", default="artifacts/model.joblib")
+    parser.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "localhost"])
+    parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
     try:
-        bundle = joblib.load(args.model)
-        for key in ("pipeline", "fair_model", "metadata"):
-            if key not in bundle:
-                raise ValueError("Invalid model bundle.")
-    except Exception:
-        bundle = None
-        print("Model unavailable. Rebuild with python -m src.train.", flush=True)
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(bundle))
-    print(f"Local proof of concept listening on http://{args.host}:{server.server_port}", flush=True)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+        bundle = load_bundle(args.model)
+    except (FileNotFoundError, ValueError, ImportError) as exc:
+        parser.exit(1, f"{exc}\n")
+    with make_server(bundle, args.host, args.port) as server:
+        print(f"Model loaded. Listening on http://{args.host}:{server.server_port}", flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
 
 
 if __name__ == "__main__":

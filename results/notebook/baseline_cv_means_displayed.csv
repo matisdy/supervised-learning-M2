@@ -1,0 +1,5 @@
+model,source_cell,provenance,fit_time,score_time,test_accuracy,test_precision,test_recall,test_f1,test_roc_auc
+Logistic Regression,80,original_saved_output,2.359712,0.170822,0.637454,0.627333,0.533207,0.576422,0.690899
+Random Forest,81,Regenerated from an actual src.tune --compare run on the supplied data; not a top-to-bottom notebook execution. Full-precision folds: results/reproduced/comparison_folds.csv.,61.321039,1.186793,0.639992,0.633173,0.527594,0.575572,0.691691
+LightGBM,82,original_saved_output,1.03807,0.199625,0.645749,0.633155,0.557218,0.592721,0.702293
+CatBoost,83,original_saved_output,16.041816,0.180883,0.649357,0.634958,0.569801,0.60049,0.707329

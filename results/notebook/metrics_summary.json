@@ -1,0 +1,117 @@
+{
+  "evidence_type": "saved_notebook_outputs_with_labelled_reproduction",
+  "source_sha256": "a0b562f79878cbfbbc0056e4eee6e6ac0a98602b9f0891fa8d4424e0cde0977f",
+  "validation_calibration": {
+    "brier": {
+      "value": 0.21552468552847948,
+      "source_cell": 126,
+      "precision": "saved float representation"
+    },
+    "ece": {
+      "value": 0.010763150222173357,
+      "source_cell": 127,
+      "precision": "saved float representation"
+    }
+  },
+  "test_roc_auc": {
+    "value": 0.7069148710313543,
+    "source_cell": 144,
+    "precision": "saved float representation"
+  },
+  "test_performance": {
+    "values": {
+      "Before": {
+        "Accuracy": 0.648,
+        "Precision": 0.623,
+        "Recall": 0.569,
+        "F1": 0.595
+      },
+      "After": {
+        "Accuracy": 0.642,
+        "Precision": 0.607,
+        "Recall": 0.599,
+        "F1": 0.603
+      }
+    },
+    "source_cell": 144,
+    "decimal_places": 3,
+    "rounding_tolerance": 0.0005
+  },
+  "test_fairness_gaps": {
+    "values": {
+      "Before": {
+        "TPR": 0.208,
+        "FPR": 0.201,
+        "Equalized odds gap": 0.208
+      },
+      "After": {
+        "TPR": 0.111,
+        "FPR": 0.066,
+        "Equalized odds gap": 0.111
+      }
+    },
+    "source_cell": 148,
+    "decimal_places": 3,
+    "rounding_tolerance": 0.0005
+  },
+  "baseline_cv_means": {
+    "values": [
+      {
+        "model": "Logistic Regression",
+        "source_cell": 80,
+        "provenance": "original_saved_output",
+        "fit_time": 2.359712,
+        "score_time": 0.170822,
+        "test_accuracy": 0.637454,
+        "test_precision": 0.627333,
+        "test_recall": 0.533207,
+        "test_f1": 0.576422,
+        "test_roc_auc": 0.690899
+      },
+      {
+        "model": "Random Forest",
+        "source_cell": 81,
+        "provenance": "Regenerated from an actual src.tune --compare run on the supplied data; not a top-to-bottom notebook execution. Full-precision folds: results/reproduced/comparison_folds.csv.",
+        "fit_time": 61.321039,
+        "score_time": 1.186793,
+        "test_accuracy": 0.639992,
+        "test_precision": 0.633173,
+        "test_recall": 0.527594,
+        "test_f1": 0.575572,
+        "test_roc_auc": 0.691691
+      },
+      {
+        "model": "LightGBM",
+        "source_cell": 82,
+        "provenance": "original_saved_output",
+        "fit_time": 1.03807,
+        "score_time": 0.199625,
+        "test_accuracy": 0.645749,
+        "test_precision": 0.633155,
+        "test_recall": 0.557218,
+        "test_f1": 0.592721,
+        "test_roc_auc": 0.702293
+      },
+      {
+        "model": "CatBoost",
+        "source_cell": 83,
+        "provenance": "original_saved_output",
+        "fit_time": 16.041816,
+        "score_time": 0.180883,
+        "test_accuracy": 0.649357,
+        "test_precision": 0.634958,
+        "test_recall": 0.569801,
+        "test_f1": 0.60049,
+        "test_roc_auc": 0.707329
+      }
+    ],
+    "decimal_places": 6,
+    "rounding_tolerance": 5e-07
+  },
+  "active_baselines": [
+    "Logistic Regression",
+    "Random Forest",
+    "LightGBM",
+    "CatBoost"
+  ]
+}

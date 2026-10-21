@@ -1,0 +1,42 @@
+{
+  "source": "Fresh script reproduction; fixed saved model, no selection or retraining",
+  "calibration": {
+    "valid": {
+      "brier": 0.21552468552847948,
+      "ece": 0.010763150222173357
+    },
+    "test": {
+      "brier": 0.2149554097333261,
+      "ece": 0.008129909127109144
+    }
+  },
+  "test_roc_auc": 0.7069148710313543,
+  "performance": {
+    "Before": {
+      "Accuracy": 0.6484394382970278,
+      "Precision": 0.6229351209001676,
+      "Recall": 0.5694277273224642,
+      "F1": 0.5949808494826502
+    },
+    "After": {
+      "Accuracy": 0.6424849898278172,
+      "Precision": 0.6072062084257206,
+      "Recall": 0.5992997045628624,
+      "F1": 0.6032270499476844
+    }
+  },
+  "fairness_gaps": {
+    "Before": {
+      "TPR": 0.20802271700099828,
+      "FPR": 0.2009809079536553,
+      "Equalized odds gap": 0.20802271700099828
+    },
+    "After": {
+      "TPR": 0.11088011088011096,
+      "FPR": 0.06640744613058863,
+      "Equalized odds gap": 0.11088011088011096
+    }
+  },
+  "validation_limitation": "Validation belongs to development previously used by Optuna; it is not independent of hyperparameter selection.",
+  "probabilities": "Baseline LightGBM probabilities; mitigation changes binary decisions only"
+}

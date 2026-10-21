@@ -1,0 +1,6 @@
+index_0,Feature,Value,SHAP,Absolute SHAP
+8,numeric__previous_visits,-0.523137,-0.224324,0.224324
+1005,categorical__diag_2_428,1.000000,0.186930,0.186930
+6,numeric__number_inpatient,-0.503312,-0.103045,0.103045
+7,numeric__number_diagnoses,0.816531,0.102447,0.102447
+2252,categorical__diabetesMed_No,0.000000,0.079945,0.079945

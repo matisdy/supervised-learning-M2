@@ -1,0 +1,7 @@
+Group,Stays,Prevalence,Selection rate,TPR,FPR,Precision,False positives,False negatives
+AfricanAmerican,3071,0.451,0.398,0.554,0.270,0.628,455,618
+Asian,95,0.274,0.168,0.269,0.130,0.438,9,19
+Caucasian,12325,0.477,0.438,0.582,0.305,0.635,1967,2458
+Hispanic,351,0.402,0.416,0.688,0.233,0.664,49,44
+Other,231,0.377,0.316,0.529,0.188,0.630,27,41
+Unknown,394,0.343,0.183,0.363,0.089,0.681,23,86

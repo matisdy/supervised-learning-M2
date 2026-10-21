@@ -1,0 +1,13 @@
+Version,Group,Stays,Prevalence,Selection rate,TPR,FPR,Precision,False positives,False negatives
+Before,AfricanAmerican,3847,0.458,0.414,0.558,0.292,0.618,609,778
+Before,Asian,125,0.416,0.264,0.423,0.151,0.667,11,30
+Before,Caucasian,15089,0.460,0.426,0.579,0.296,0.625,2413,2925
+Before,Hispanic,393,0.394,0.361,0.542,0.244,0.592,58,71
+Before,Other,289,0.384,0.291,0.477,0.174,0.631,31,58
+Before,Unknown,410,0.283,0.173,0.371,0.095,0.606,28,73
+After,AfricanAmerican,3847,0.458,0.459,0.606,0.335,0.604,699,695
+After,Asian,125,0.416,0.472,0.615,0.370,0.542,27,20
+After,Caucasian,15089,0.460,0.447,0.601,0.316,0.619,2571,2772
+After,Hispanic,393,0.394,0.407,0.542,0.319,0.525,76,71
+After,Other,289,0.384,0.429,0.505,0.382,0.452,68,55
+After,Unknown,410,0.283,0.412,0.578,0.347,0.396,102,49

@@ -1,0 +1,5 @@
+model,test_accuracy,test_precision,test_recall,test_f1,test_roc_auc
+Logistic Regression,0.637,0.627,0.533,0.576,0.691
+Random Forest,0.640,0.633,0.528,0.576,0.692
+LightGBM,0.646,0.633,0.557,0.593,0.702
+CatBoost,0.649,0.635,0.570,0.600,0.707

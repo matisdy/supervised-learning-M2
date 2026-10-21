@@ -1,0 +1,41 @@
+{
+  "logistic": {
+    "constructor": "LogisticRegression",
+    "arguments": {
+      "max_iter": 1000,
+      "random_state": 42
+    },
+    "source_cell": 76,
+    "included_in_comparison": true
+  },
+  "forest": {
+    "constructor": "RandomForestClassifier",
+    "arguments": {
+      "random_state": 42
+    },
+    "source_cell": 76,
+    "included_in_comparison": true
+  },
+  "lightgbm": {
+    "constructor": "LGBMClassifier",
+    "arguments": {
+      "random_state": 42
+    },
+    "source_cell": 76,
+    "included_in_comparison": true
+  },
+  "catboost": {
+    "constructor": "CatBoostClassifier",
+    "arguments": {
+      "iterations": 300,
+      "cat_features": {
+        "expression": "tuple(categorical_columns)"
+      },
+      "random_seed": 42,
+      "verbose": false,
+      "allow_writing_files": false
+    },
+    "source_cell": 76,
+    "included_in_comparison": true
+  }
+}

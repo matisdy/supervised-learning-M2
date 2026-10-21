@@ -1,0 +1,6 @@
+index_0,Feature,Value,SHAP,Absolute SHAP
+8,numeric__previous_visits,-0.523137,-0.300814,0.300814
+6,numeric__number_inpatient,-0.503312,-0.160896,0.160896
+0,numeric__time_in_hospital,-1.136935,-0.094118,0.094118
+69,categorical__admission_source_id_7,1.000000,0.088594,0.088594
+2,numeric__num_procedures,0.389052,-0.084272,0.084272

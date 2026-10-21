@@ -11,6 +11,7 @@ sklearn
 # Libraries for machine learning and model evaluation
 scikit-learn
 lightgbm
+catboost
 
 # Tuning and optimization libraries
 optuna

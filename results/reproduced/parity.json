@@ -1,0 +1,76 @@
+{
+  "test_roc_auc": {
+    "actual": 0.7069148710313543,
+    "notebook_expected": 0.7069148710313543,
+    "matches_at_1e-12": true
+  },
+  "validation_brier": {
+    "actual": 0.21552468552847948,
+    "notebook_expected": 0.21552468552847948,
+    "matches_at_1e-12": true
+  },
+  "validation_ece": {
+    "actual": 0.010763150222173357,
+    "notebook_expected": 0.010763150222173357,
+    "matches_at_1e-12": true
+  },
+  "fairness_before_eo": {
+    "actual": 0.20802271700099828,
+    "notebook_expected": 0.20802271700099828,
+    "matches_at_1e-12": true
+  },
+  "fairness_after_eo": {
+    "actual": 0.11088011088011096,
+    "notebook_expected": 0.11088011088011096,
+    "matches_at_1e-12": true
+  },
+  "performance_rounded_3dp": {
+    "actual": {
+      "Before": {
+        "Accuracy": 0.648,
+        "Precision": 0.623,
+        "Recall": 0.569,
+        "F1": 0.595
+      },
+      "After": {
+        "Accuracy": 0.642,
+        "Precision": 0.607,
+        "Recall": 0.599,
+        "F1": 0.603
+      }
+    },
+    "notebook_expected": {
+      "Before": {
+        "Accuracy": 0.648,
+        "Precision": 0.623,
+        "Recall": 0.569,
+        "F1": 0.595
+      },
+      "After": {
+        "Accuracy": 0.642,
+        "Precision": 0.607,
+        "Recall": 0.599,
+        "F1": 0.603
+      }
+    },
+    "matches": true
+  },
+  "patient_overlap": 0,
+  "shap_local": [
+    {
+      "stay_index": 39397,
+      "probability": 0.6057499973536408,
+      "additivity_check": true
+    },
+    {
+      "stay_index": 66309,
+      "probability": 0.23157992925718873,
+      "additivity_check": true
+    },
+    {
+      "stay_index": 42168,
+      "probability": 0.531330127341237,
+      "additivity_check": true
+    }
+  ]
+}

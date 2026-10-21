@@ -1,57 +1,86 @@
-# Diabetes 130 US Hospitals
+# Recorded hospital readmission
 
-Link to have a more detailed look at the dataset:
-https://onlinelibrary.wiley.com/doi/10.1155/2014/781670
+Supervised Learning & Model Engineering, Albert School.  
+**Authors:** Matis Douay, Driss Haddadi and Rayan Faher Bonne.  
+**Dataset:** Diabetes 130-US Hospitals, OpenML 4541.  
+**Submission repository:** https://github.com/matisdy/diabetes-submission
 
-## 1. Overview of Dataset
+The target is a recorded readmission at either delay (`<30` or `>30` = 1; `NO` = 0). `NO` does not establish that no readmission occurred elsewhere. This is a coursework proof of concept, not a clinically validated service.
 
-#### This dataset represents 10 years of clinical care at 130 US hospitals ranging from 1999 to 2008. The dataset includes over 50 features that represent patient and hospital outcomes. The information was extracted from the database for encounters that satisfy the following criteria:
-- It is an inpatient encounter (hopsital admission)
-- It is a diabetic encounter, one during which any kind of diabetes was entered to the system as a diagnosis
-- The length of stay ranges between 1 day to 14 days
-- The laboratory tests were performed during the encounter
-- Medications were administered during the encounter
+## Installation
 
-**The number of outpatient, inpatient and emergency visits are limited to the year before hospitalization!**
+Run all commands from the repository root. Use Python 3.13; the pinned dependencies match the original Python 3.13.7 environment. LightGBM requires a compatible native OpenMP runtime.
 
-**There are 3 columns for diagnoses: diag_1, diag_2 and diag_3. Diag_1 represents the main diagnosis and so on; they are represented by numbers which refer to the ICU9 codes!!**
-
-## 2. Business Case
-
-### The business case is to predict hospital readmissions among diabetic patients.
-
-The objective here is to use the historical data so we could identify the factors associated with early readmission among the patients with diabetes so we could reduce it. When we apply this predictive analysis, it could benefit the hospitals by identifying higher-risk patients and optimize the discharge planning among diabetes patients. To be able to evaluate our models, we should measure our success through readmission rates and  patient outcomes through different metrics such as the accuracy and precision.
-
-## 3. Project Structure
-
-```text
-Supervied-learning-Diabetes/
-│
-├── diabetes.ipynb
-│
-├── src/
-│   ├── data_preprocessing.py
-│   ├── feature_engineering.py
-│   ├── train.py
-│   ├── evaluate.py
-│   ├── explainability.py
-│   ├── fairness.py
-│   └── predict.py
-│
-├── models/
-│   └── .gitkeep
-│
-├── reports/
-│   └── figures/
-│
-├── requirements.txt
-├── README.md
-└── .gitignore
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip check
 ```
-The diabetes notebook consists of the EDA analysis along with the feature engineering, model selection and hyperparameter tuning.
 
-## 4. Installation
+## Reproduce the results
 
-```text
-pip install -r requirements.txt
+```bash
+python -m src.eda
+python -m src.train
 ```
+
+The training command loads the bundled dataset offline, recreates patient-grouped partitions, reads the retained Optuna studies, fits the selected LightGBM and fairness post-processor, and exports calibration, SHAP and fairness results under `results/reproduced/`. It saves `artifacts/model.joblib` and checks key metrics against the frozen notebook results. Generated outputs are overwritten.
+
+The fitting/validation/test sets contain 65,146 / 16,467 / 20,153 stays. No patient crosses either split boundary. The single estimator Pipeline accepts 49 raw predictors: its first `PrepareEncounters` step performs fixed cleaning and feature calculations, followed by learned preprocessing and the classifier. Four model families were compared; the two strongest boosting candidates were tuned.
+
+Default training does not repeat the four baseline CVs or run new Optuna trials. To repeat the baseline comparison or omit SHAP:
+
+```bash
+python -m src.train --baselines
+python -m src.train --skip-shap
+```
+
+To export/resume the retained tuning studies:
+
+```bash
+python -m src.tune
+```
+
+The supplied database contains 50 completed trials per candidate. The default total budget is 50, so this starts no new trials. A separate `artifacts/tuning_work.db` is used; the original `optuna_results.db` is preserved. Increasing `--budget` intentionally runs further trials. Never mix changed data, targets or folds into the retained studies. See `python -m src.train --help` and `python -m src.tune --help` for options.
+
+## Local prediction endpoint
+
+Use the supplied model bundle, or rebuild it with `python -m src.train`:
+
+```bash
+python -m src.serve --host 127.0.0.1 --port 8000 --model artifacts/model.joblib
+```
+
+In a second terminal, call the endpoint with the supplied raw-encounter example:
+
+```bash
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/predict -H 'Content-Type: application/json' --data-binary @examples/request.json
+```
+
+`POST /predict` accepts `{"records": [raw_encounter, ...], "mitigation": false}`. Each record must contain all 49 raw predictors listed in `data/diabetes130us.json`, excluding `readmitted`. Numerical values must be finite integers; stay duration must be positive. Categorical values are strings or null. Unknown categories are supported by the base encoder. Input validation checks schema, not clinical plausibility.
+
+The response contains the base probability and a threshold-0.5 decision. Setting `"mitigation": true` adds a race-dependent equalized-odds decision without changing the probability; the race group must have been seen during fitting. Optional `"random_seed": 42` reproduces the same whole-batch randomized output. Seeded single requests need not equal a seeded batch. The standard-library HTTP server is intended for a local demonstration.
+
+## Files and report
+
+- `src/`: loading, Pipeline construction, EDA, training, tuning, evaluation, SHAP and serving.
+- `data/`: offline snapshot and schema/provenance metadata; see `data/README.md`.
+- `optuna_results.db`: original LightGBM and CatBoost studies.
+- `artifacts/model.joblib`: fitted Pipeline, fairness rules and metadata.
+- `examples/request.json`: complete raw-encounter request for the endpoint.
+- `results/reproduced/`: selected metrics, figures, comparisons and tuning histories.
+- `reports/diabetes_report.pdf`: ten main pages and a contribution/AI-use appendix.
+- `reports/latex/main.tex`, `reports/latex/images/`: editable report source.
+- `presentation/deck.pptx`, `presentation/deck.pdf`: editable defense deck and PDF.
+
+Compile the report with a standard LaTeX installation:
+
+```bash
+cd reports/latex
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+```
+
+The retained cohort includes deaths; the validation subset participated in hyperparameter selection, and SHAP uses a mixed development sample. The report explains these limits and the accuracy/fairness trade-off. The three authors must confirm their actual contribution and full AI-use declarations, rehearse the seven-minute presentation and three-minute Q&A, and verify professor access before submitting the report PDF.
